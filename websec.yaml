@@ -1,0 +1,36 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /var/www/html
+hooks:
+  ApplicationStop:
+    - name: "Delete Existing Index.html"
+      actions:
+        - action: "aws:executeAwsCli"
+          name: "DeleteIndexHtml"
+          inputArtifacts: []
+          runOrder: 1
+          timeoutSeconds: 300
+          awsCliVersion: "latest"
+          type: "AWS::CloudFormation::Stack"
+          stack: "<YOUR_STACK_NAME>"
+          command: "s3"
+          subCommand: "rm"
+          parameters:
+            - "s3://<YOUR_BUCKET_NAME>/index.html"
+  ApplicationStart:
+    - name: "Deploy Website to S3"
+      actions:
+        - action: "aws:executeScript"
+          name: "Deploy"
+          runOrder: 1
+          timeoutSeconds: 300
+          script: |
+            #!/bin/bash
+            echo Deploying website to S3...
+            aws s3 cp . s3://<YOUR_BUCKET_NAME> --recursive --exclude "*" --include "*.html" --include "*.css" --include "*.js"
+artifacts:
+  files:
+    - index.html
+    - style.css
